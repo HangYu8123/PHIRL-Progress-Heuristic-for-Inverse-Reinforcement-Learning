@@ -46,15 +46,18 @@ if __name__ == "__main__":
 
 
     n_envs = 20
-    horizon = 800
-    n_disc = 2
+    horizon = 600
+    n_disc = 4
     ppo_bs = 128
-    gen_buff_size = 20000
-    reward_size = 64
-    potential_size = 64
+    gen_buff_size = 50000
+    reward_size = 128
+    potential_size = 128
     demo_batch_size = 64
+    gamma = 0.99
 
-
+    start = 0
+    training_time = 500_000
+    training_round = 100
     
     args = parser.parse_args()
     print("sequence keys", args.sequence_keys)
@@ -88,7 +91,7 @@ if __name__ == "__main__":
         render_camera="frontview",              # visualize the "frontview" camera
         has_offscreen_renderer=False,           # no off-screen rendering
         control_freq=20,                        # 20 hz control for applied actions
-        horizon=800,                            # each episode terminates after 300 steps
+        horizon=horizon,                            # each episode terminates after 300 steps
         use_object_obs=True,                   # no observations needed
         use_camera_obs=False,
         reward_shaping=True,
@@ -148,7 +151,7 @@ if __name__ == "__main__":
         sequential_wrapper_kwargs = sequential_wrapper_kwargs
     )
     print(envs.observation_space)
-    annotation_dict = read_all_json("annotated_demos/" + args.env_name + "_" + args.dataset_type)
+    annotation_dict = read_all_json(args.env_name + "_" + args.dataset_type)
 
 
     trajs = load_dataset_to_trajectories(["object","robot0_eef_pos", "robot0_eef_quat", "robot0_gripper_qpos"],
@@ -194,7 +197,7 @@ if __name__ == "__main__":
         batch_size=ppo_bs,
         ent_coef=0.01,
         learning_rate=3e-4,
-        gamma=0.95,
+        gamma=gamma,
         clip_range=0.2,
         vf_coef=0.5,
         n_epochs=10,
@@ -209,9 +212,9 @@ if __name__ == "__main__":
     )
 
 
-    generator_model_path = f"{project_path}/checkpoints/{args.load_exp_name}/{args.checkpoint}/gen_policy/model"
+    generator_model_path = f"checkpoints/{args.load_exp_name}/{args.checkpoint}/gen_policy/model"
     if args.load_exp_name != "":
-        reward_net = (torch.load(f"{project_path}/checkpoints/{args.load_exp_name}/{args.checkpoint}/reward_train.pt"))
+        reward_net = (torch.load(f"checkpoints/{args.load_exp_name}/{args.checkpoint}/reward_train.pt"))
         learner = PPO.load(generator_model_path)
     # logger that write tensroborad to logs dir
     logger = imit_logger.configure(folder=log_dir, format_strs=["tensorboard"])
@@ -253,9 +256,7 @@ if __name__ == "__main__":
 
 
 
-    start = 0
-    training_time = 1_000_000
-    training_round = 50
+
     record_file = "log_files/" + args.exp_name + ".txt"
     with open(record_file, "w") as f:
         pass

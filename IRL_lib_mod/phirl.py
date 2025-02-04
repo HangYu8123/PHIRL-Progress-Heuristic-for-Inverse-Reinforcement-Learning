@@ -94,6 +94,7 @@ class PHIRL(common.AdversarialTrainer):
         if not os.path.exists(self.save_path):
             print("creating save path")
             os.makedirs(self.save_path)
+        #print("n_disc per round", self.n_disc_updates_per_round)
         # path from str to Path
         # self.save_path = Path(self.save_path)
 
