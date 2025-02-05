@@ -43,6 +43,7 @@ if __name__ == "__main__":
     parser.add_argument('--full_obs', type=str, default="True")
     parser.add_argument('-s', '--sequence_keys', nargs='+', default=[])
     parser.add_argument('-l', '--obs_seq_len', type=int, default=1)
+    parser.add_argument('--annotated_only', type=str, default="False")
 
 
     n_envs = 20
@@ -153,16 +154,19 @@ if __name__ == "__main__":
     print(envs.observation_space)
     annotation_dict = read_all_json(args.env_name + "_" + args.dataset_type)
 
-
-    trajs = load_dataset_to_trajectories(["object","robot0_eef_pos", "robot0_eef_quat", "robot0_gripper_qpos"],
-                                         dataset_path = dataset_path,
-                                            make_sequential_obs=make_sequential_obs,
-                                         sequential_obs_keys=args.sequence_keys,
-                                         obs_seq_len=args.obs_seq_len,
-                                         use_half_gripper_obs=True,
-                                         #oppsite of full_obs
-                                         use_cube_pos= cube_obs
-                                         )
+    trajs = []
+    if args.annotated_only == "True":
+        pass
+    else:
+        trajs = load_dataset_to_trajectories(["object","robot0_eef_pos", "robot0_eef_quat", "robot0_gripper_qpos"],
+                                            dataset_path = dataset_path,
+                                                make_sequential_obs=make_sequential_obs,
+                                            sequential_obs_keys=args.sequence_keys,
+                                            obs_seq_len=args.obs_seq_len,
+                                            use_half_gripper_obs=True,
+                                            #oppsite of full_obs
+                                            use_cube_pos= cube_obs
+                                            )
     
     # for i in range(len(trajs)):
     #     if trajs[i].obs.shape[1] != 31:
@@ -177,6 +181,10 @@ if __name__ == "__main__":
                                          use_half_gripper_obs=True,
                                          use_cube_pos= cube_obs
                                                                        )
+    if args.annotated_only == "True":
+        trajs = trajs_for_shaping
+
+        
     # type of reward shaping to use
     # change this to enable or disable reward shaping
     #shape_reward = ["progress_sign_loss", "value_sign_loss", "advantage_sign_loss"]

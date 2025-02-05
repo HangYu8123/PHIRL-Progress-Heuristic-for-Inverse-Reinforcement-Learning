@@ -18,6 +18,7 @@ def load_dataset_to_trajectories(obs_keys:Iterable[str],
     filter_key = "train"
     demo_keys = [elem.decode("utf-8") for elem in np.array(f["mask/{}".format(filter_key)][:])]
     #print("all demo keys: ", demo_keys)
+    print("number of demos: ", len(demo_keys))
     trajectories = []
     for key in demo_keys:
         
@@ -101,6 +102,7 @@ def load_dataset_and_annotations_simutanously(obs_keys:Iterable[str],
     annotation_keys = list(annotation_dict.keys())
     trajectories = []
     annotation_list = []
+    print("number of annotated demos: ", len(annotation_keys))
     for key in annotation_keys:
 
         # load obs
