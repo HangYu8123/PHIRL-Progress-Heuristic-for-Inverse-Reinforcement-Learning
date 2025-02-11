@@ -45,7 +45,7 @@ def replay_trajectory_and_collect_progress(dataset_path:str,
     env_kwargs["reward_shaping"] = True
 
     # make environment
-    env:PickPlaceCan = suite.make(
+    env = suite.make(
         env_name=env_name,
         **env_kwargs
     )

@@ -26,9 +26,11 @@ import imitation.scripts.train_adversarial as train_adversarial
 import torch
 
 import argparse
-
+import robosuite as suite
 from stable_baselines3.common.callbacks import BaseCallback
 import numpy as np
+import torch as th
+from utils.online_learning_utils import save_demo_to_hdf5, annotate_demo, generate_demo, flatten_obs
 
 print_cnt = 0
 
@@ -46,7 +48,7 @@ if __name__ == "__main__":
     parser.add_argument('--annotated_only', type=str, default="False")
 
 
-    n_envs = 20
+    n_envs = 2
     horizon = 600
     n_disc = 4
     ppo_bs = 128
@@ -59,6 +61,11 @@ if __name__ == "__main__":
     start = 0
     training_time = 500_000
     training_round = 100
+
+    total_annotation = 5
+
+    annotation_dict = { i * training_round / total_annotation for i in range(total_annotation)}
+    print(annotation_dict)
     
     args = parser.parse_args()
     print("sequence keys", args.sequence_keys)
@@ -151,6 +158,20 @@ if __name__ == "__main__":
         sequential_wrapper = seqential_wrapper_cls,
         sequential_wrapper_kwargs = sequential_wrapper_kwargs
     )
+    # single_env = make_vec_env_robosuite(
+    #     robosuite_env_name,
+    #     rng=np.random.default_rng(SEED),
+    #     n_envs=1,
+    #     parallel=False,
+    #     post_wrappers=[lambda env, _: RolloutInfoWrapper(env)],  # to compute rollouts
+    #     env_make_kwargs=make_env_kwargs,
+    #     sequential_wrapper = seqential_wrapper_cls,
+    #     sequential_wrapper_kwargs = sequential_wrapper_kwargs
+    # ) 
+    single_env_args = make_env_kwargs
+    single_env_args["has_renderer"] = True
+    single_env = suite.make(robosuite_env_name, 
+                            **single_env_args)
     print(envs.observation_space)
     annotation_dict = read_all_json(args.env_name + "_" + args.dataset_type)
 
@@ -200,6 +221,18 @@ if __name__ == "__main__":
             traj_index.append(i)
                                                                   
     learner = PPO(
+        env=envs,
+        policy=MlpPolicy,
+        batch_size=ppo_bs,
+        ent_coef=0.00,
+        learning_rate=3e-4,
+        gamma=gamma,
+        clip_range=0.2,
+        vf_coef=0.5,
+        n_epochs=10,
+        seed=SEED,
+    )
+    agent = PPO(
         env=envs,
         policy=MlpPolicy,
         batch_size=ppo_bs,
@@ -272,14 +305,46 @@ if __name__ == "__main__":
     import time
     start_time = time.time()
     for i in range(start, training_round):
-        airl_trainer.train(total_timesteps=training_time)
+        #airl_trainer.train(total_timesteps=training_time)
         if i % 1 == 0:
-            elapsed_time_seconds = time.time() - start_time
-            elapsed_time_str = time.strftime("%H:%M:%S", time.gmtime(elapsed_time_seconds))
-            learner_rewards = evaluate_policy(learner, envs, n_eval_episodes=5)
-            print("learner mean reward at round", i, ":", np.mean(learner_rewards))
-            print("running time ", i, "round :", elapsed_time_str)
-            with open(record_file, "a") as f:
-                f.write("mean reward at round " + str(i) + ":" + str(np.mean(learner_rewards)) + "\n")
-                f.write("running time " + str(i) + " round :" + elapsed_time_str + "\n")
-                f.close()
+            pass
+            # elapsed_time_seconds = time.time() - start_time
+            # elapsed_time_str = time.strftime("%H:%M:%S", time.gmtime(elapsed_time_seconds))
+            # learner_rewards = evaluate_policy(learner, envs, n_eval_episodes=5)
+            # print("learner mean reward at round", i, ":", np.mean(learner_rewards))
+            # print("running time ", i, "round :", elapsed_time_str)
+            # with open(record_file, "a") as f:
+            #     f.write("mean reward at round " + str(i) + ":" + str(np.mean(learner_rewards)) + "\n")
+            #     f.write("running time " + str(i) + " round :" + elapsed_time_str + "\n")
+            #     f.close()
+        if i % 5 == 0:
+            # generate a trajectory using learned policy
+            # and annotate it with progress
+
+            done = False
+            obs = single_env.reset()
+            progress = []
+            data_folder = "human-demo/" + args.env_name + "/low_dim_v141_" + args.env_name + "_ph_gen.hdf5"
+            #print(data_folder)
+            cnt = 0 
+            # copy learner.policy to a new agent
+            print("gets here")
+            th.save(learner.policy.state_dict(), "temp_files/temp_policy.pt")
+            agent.policy.load_state_dict(th.load("temp_files/temp_policy.pt"))
+            new_demo_traj, new_demo = generate_demo(agent, single_env, obs_keys)
+            #print("new demo", new_demo)
+            save_demo_to_hdf5(new_demo, data_folder, "gen_demo_" + str(i), env_args=env_meta["env_kwargs"])
+            # annotate the new demo
+            annotate_demo(data_folder, "gen_demo_" + str(i),  single_env, 10, obs_keys)
+            break
+            # save the new demo to the dataset
+            # # unfinished code
+
+            # while not done:
+            #     cnt+=1
+            #     action, _ = agent.predict(obs, deterministic=True)
+            #     print("action:",  action)
+            #     obs, _, done, info = single_env.step(action)
+            #     #envs.render()
+            #     print(obs)
+            #     print(done)
