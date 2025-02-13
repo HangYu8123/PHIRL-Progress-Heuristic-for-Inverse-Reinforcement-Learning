@@ -650,6 +650,7 @@ class PHIRL(common.AdversarialTrainer):
                     print("************************************************************")
                 else:
                     shaping_loss = th.tensor(0.0, device=self.gen_algo.device)
+                    print("AIRL loss:", loss)
 
                 combined_loss = loss + shaping_loss
                 combined_loss.backward()

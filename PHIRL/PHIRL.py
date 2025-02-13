@@ -40,24 +40,27 @@ if __name__ == "__main__":
     parser.add_argument('--exp_name', type=str, default="default_experiment")
     parser.add_argument('--checkpoint', type=str, default="320")
     parser.add_argument('--load_exp_name', type=str, default="")
-    parser.add_argument('--full_obs', type=str, default="True")
+    parser.add_argument('--full_obs', type=str, default="False")
     parser.add_argument('-s', '--sequence_keys', nargs='+', default=[])
     parser.add_argument('-l', '--obs_seq_len', type=int, default=1)
     parser.add_argument('--annotated_only', type=str, default="False")
 
 
-    n_envs = 10
+    n_envs = 20
     horizon = 600
     n_disc = 3
     ppo_bs = 128
-    gen_buff_size = 20000
+    demo_batch_size = 64
+
+
+    gen_buff_size = 20_000
     reward_size = 64
     potential_size = 64
-    demo_batch_size = 64
+    
     gamma = 0.95
 
     training_round = 100
-    training_time = 500_000
+    training_time = 1_000_000
     start = 0
 
     
@@ -141,7 +144,7 @@ if __name__ == "__main__":
         if args.env_name == "lift":
             obs_keys = ["cube_pos", "robot0_eef_pos", "robot0_eef_quat", "robot0_gripper_qpos"]
 
-    
+    print("obs_keys", obs_keys)
     envs = make_vec_env_robosuite(
         robosuite_env_name,
         obs_keys = obs_keys,
@@ -226,6 +229,7 @@ if __name__ == "__main__":
     if args.load_exp_name != "":
         reward_net = (torch.load(f"checkpoints/{args.load_exp_name}/{args.checkpoint}/reward_train.pt"))
         learner = PPO.load(generator_model_path)
+        print("loaded model from", generator_model_path)
     # logger that write tensroborad to logs dir
     logger = imit_logger.configure(folder=log_dir, format_strs=["tensorboard"])
 
@@ -277,7 +281,7 @@ if __name__ == "__main__":
         if i % 1 == 0:
             elapsed_time_seconds = time.time() - start_time
             elapsed_time_str = time.strftime("%H:%M:%S", time.gmtime(elapsed_time_seconds))
-            learner_rewards = evaluate_policy(learner, envs, n_eval_episodes=5)
+            learner_rewards = evaluate_policy(learner, envs, n_eval_episodes=10)
             print("learner mean reward at round", i, ":", np.mean(learner_rewards))
             print("running time ", i, "round :", elapsed_time_str)
             with open(record_file, "a") as f:
