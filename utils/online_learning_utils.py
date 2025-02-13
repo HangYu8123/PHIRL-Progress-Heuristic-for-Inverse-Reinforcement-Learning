@@ -70,7 +70,8 @@ def generate_demo(agent, env, obs_keys):
     # Reset the environment and record the initial observation and state.
     obs = env.reset()
     state = env.sim.get_state().flatten()
-    traj["obs"].append(obs)
+    flat_obs = flatten_obs(obs, obs_keys)
+    traj["obs"].append(flat_obs)
     traj["states"].append(state)
 
     # Use the filtered (flattened) observation for the agent.
@@ -81,18 +82,19 @@ def generate_demo(agent, env, obs_keys):
         action, _ = agent.predict(flat_obs, deterministic=True)
         obs, reward, done, info = env.step(action)
         traj["actions"].append(action)
-        traj["obs"].append(obs)
         traj["dones"].append(done)
         state = env.sim.get_state().flatten()
         traj["states"].append(state)
         flat_obs = flatten_obs(obs, obs_keys)
+        #print("flat_obs", flat_obs)
+        traj["obs"].append(flat_obs)
 
     # Convert lists to NumPy arrays (actions, dones, states) and convert the list
     # of observation dictionaries into a structured array.
     traj["actions"] = np.array(traj["actions"])
     traj["dones"] = np.array(traj["dones"])
     traj["states"] = np.array(traj["states"])
-    traj["obs"] = convert_obs_list_to_structured(traj["obs"])
+    traj["obs"] = np.array(traj["obs"])
 
     trajectory_type = types.Trajectory(
         obs=traj["obs"],

@@ -204,6 +204,9 @@ if __name__ == "__main__":
                                                                        )
     if args.annotated_only == "True":
         trajs = trajs_for_shaping
+    print("cube obs", cube_obs)
+    print("form check, original demo shape", trajs_for_shaping[0].obs[0])
+    print("form check, original demo shape", len(trajs_for_shaping[0].obs[0]))
 
         
     # type of reward shaping to use
@@ -342,6 +345,8 @@ if __name__ == "__main__":
             print("form check, new demo shape", new_demo_traj.obs[0])
             print("form check, original demo shape", new_demo_traj.obs[0].shape)
             print("form check, original demo shape", len(new_demo_traj.obs[0]))
+
+            
             print("index check", traj_index[-1])
             trajs_for_shaping.append(new_demo_traj)
             traj_index.append(len(trajs_for_shaping) - 1)

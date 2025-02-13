@@ -158,7 +158,7 @@ def load_dataset_and_annotations_simutanously(obs_keys:Iterable[str],
         obs = np.concatenate(obs, axis=1)
 
         obs = np.stack(obs, axis=0)
-
+    
         # load actions
         action = np.array(f["data/{}/actions".format(key)][:-1])
         dones = np.array(f["data/{}/dones".format(key)][-1])
