@@ -143,7 +143,7 @@ def save_demo_to_hdf5(traj, file_path, demo_key, env_args):
     hf.close()
 
 
-def annotate_demo(file_path, demo_key, env, collect_progress_times, key_obs):
+def annotate_demo(file_path, demo_key, env, collect_progress_times, key_obs, exp_name):
     """
     Replay the demo specified by demo_key from the given HDF5 file, pausing at several
     indices to ask the user to input a progress value. The progress annotations are saved
@@ -160,6 +160,7 @@ def annotate_demo(file_path, demo_key, env, collect_progress_times, key_obs):
         progress_data (list): A list of annotation segments, each a dict with:
             'start_step', 'end_step', 'start_progress', 'end_progress'.
     """
+    collect_progress_times -= 1  # We always include the final step.
     # Open the file and load the demo.
     with h5py.File(file_path, "r") as hf:
         data_grp = hf["data"]
@@ -190,8 +191,8 @@ def annotate_demo(file_path, demo_key, env, collect_progress_times, key_obs):
     # Compute pause indices (evenly spaced; always include the final step)
     pause_indices = np.linspace(0, total_steps, collect_progress_times + 2, dtype=int)[1:-1]
     pause_indices = list(pause_indices)
-    if pause_indices[-1] != total_steps - 1:
-        pause_indices.append(total_steps - 1)
+    #if pause_indices[-1] != total_steps - 1:
+    pause_indices.append(total_steps - 1)
 
     progress_data = []
     print(f"Replaying demo {demo_key} (total steps: {total_steps}).")
@@ -224,11 +225,11 @@ def annotate_demo(file_path, demo_key, env, collect_progress_times, key_obs):
         if done:
             break
 
-    # # Save the progress annotation to a JSON file.
-    # ann_dir = "progress_annotations"
-    # os.makedirs(ann_dir, exist_ok=True)
-    # annotation_file = os.path.join(ann_dir, f"{demo_key}.json")
-    # with open(annotation_file, "w") as f_ann:
-    #     json.dump(progress_data, f_ann, indent=4)
-    # print(f"Annotation saved to {annotation_file}")
-    # return progress_data
+    # Save the progress annotation to a JSON file.
+    ann_dir = "gen_demo_annotations/" + exp_name
+    os.makedirs(ann_dir, exist_ok=True)
+    annotation_file = os.path.join(ann_dir, f"{demo_key}.json")
+    with open(annotation_file, "w") as f_ann:
+        json.dump(progress_data, f_ann, indent=4)
+    print(f"Annotation saved to {annotation_file}")
+    return progress_data

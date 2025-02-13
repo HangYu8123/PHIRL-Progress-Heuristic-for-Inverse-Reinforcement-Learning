@@ -269,7 +269,8 @@ if __name__ == "__main__":
     )
 
 
-
+    reward_before = evaluate_policy(learner, envs, n_eval_episodes=10)
+    print("reward before training", reward_before)
 
     record_file = "log_files/" + args.exp_name + ".txt"
     with open(record_file, "w") as f:

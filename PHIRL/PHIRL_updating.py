@@ -335,7 +335,19 @@ if __name__ == "__main__":
             #print("new demo", new_demo)
             save_demo_to_hdf5(new_demo, data_folder, "gen_demo_" + str(i), env_args=env_meta["env_kwargs"])
             # annotate the new demo
-            annotate_demo(data_folder, "gen_demo_" + str(i),  single_env, 10, obs_keys)
+            new_demo_progress = annotate_demo(data_folder, "gen_demo_" + str(i),  single_env, 3, obs_keys, exp_name=args.exp_name)
+            # add new demo and new demo progress to the dataset
+            #trajs.append(new_demo_traj)
+            #print("form check, original demo shape", trajs_for_shaping[0].obs.shape)
+            print("form check, new demo shape", new_demo_traj.obs[0])
+            print("form check, original demo shape", new_demo_traj.obs[0].shape)
+            print("form check, original demo shape", len(new_demo_traj.obs[0]))
+            print("index check", traj_index[-1])
+            trajs_for_shaping.append(new_demo_traj)
+            traj_index.append(len(trajs_for_shaping) - 1)
+            print("index check", traj_index[-1])
+
+
             break
             # save the new demo to the dataset
             # # unfinished code

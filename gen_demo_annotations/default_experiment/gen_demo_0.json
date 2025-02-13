@@ -1,0 +1,20 @@
+[
+    {
+        "start_step": 0,
+        "end_step": 200,
+        "start_progress": 0.0,
+        "end_progress": 0.0
+    },
+    {
+        "start_step": 200,
+        "end_step": 400,
+        "start_progress": 0.0,
+        "end_progress": 0.0
+    },
+    {
+        "start_step": 400,
+        "end_step": 599,
+        "start_progress": 0.0,
+        "end_progress": 0.0
+    }
+]
