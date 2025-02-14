@@ -48,19 +48,20 @@ if __name__ == "__main__":
 
     n_envs = 20
     horizon = 600
-    n_disc = 3
+    n_disc = 5
     ppo_bs = 128
     demo_batch_size = 64
+    n_epochs = 10
 
 
-    gen_buff_size = 20_000
+    gen_buff_size = n_envs * horizon * n_disc * 2
     reward_size = 64
     potential_size = 64
     
     gamma = 0.95
 
     training_round = 100
-    training_time = 1_000_000
+    training_time = n_envs * horizon * n_disc * 10
     start = 0
 
     
@@ -213,7 +214,7 @@ if __name__ == "__main__":
         gamma=gamma,
         clip_range=0.2,
         vf_coef=0.5,
-        n_epochs=10,
+        n_epochs=n_epochs,
         seed=SEED,
     )
     reward_net = BasicShapedRewardNet(

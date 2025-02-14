@@ -210,7 +210,8 @@ def annotate_demo(file_path, demo_key, env, collect_progress_times, key_obs, exp
             # Validate input.
             while True:
                 try:
-                    progress_value = float(user_input)
+                    #progress_value = float(user_input)
+                    progress_value = 0
                     break
                 except ValueError:
                     user_input = input("Invalid input. Please input a numeric progress value: ")

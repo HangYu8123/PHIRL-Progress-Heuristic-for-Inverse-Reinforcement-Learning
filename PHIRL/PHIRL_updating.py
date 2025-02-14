@@ -46,6 +46,7 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--sequence_keys', nargs='+', default=[])
     parser.add_argument('-l', '--obs_seq_len', type=int, default=1)
     parser.add_argument('--annotated_only', type=str, default="False")
+    parser.add_argument('--online_training', type=str, default="False")
 
 
     n_envs = 2
@@ -63,6 +64,8 @@ if __name__ == "__main__":
     training_round = 100
 
     total_annotation = 5
+
+    online_training_freq = 10
 
     annotation_dict = { i * training_round / total_annotation for i in range(total_annotation)}
     print(annotation_dict)
@@ -205,8 +208,8 @@ if __name__ == "__main__":
     if args.annotated_only == "True":
         trajs = trajs_for_shaping
     print("cube obs", cube_obs)
-    print("form check, original demo shape", trajs_for_shaping[0].obs[0])
-    print("form check, original demo shape", len(trajs_for_shaping[0].obs[0]))
+    # print("form check, original demo shape", trajs_for_shaping[0].obs[0])
+    # print("form check, original demo shape", len(trajs_for_shaping[0].obs[0]))
 
         
     # type of reward shaping to use
@@ -272,8 +275,8 @@ if __name__ == "__main__":
         #"demo_range_loss",
         #"delta_progress_scale_loss",
         #"advantage_sign_loss",
-        #"value_sign_loss",
-        #"reward_sign_loss",
+        "value_sign_loss",
+        "reward_sign_loss",
         #"subtrajectory_proportion_loss"
     ]
 
@@ -308,19 +311,18 @@ if __name__ == "__main__":
     import time
     start_time = time.time()
     for i in range(start, training_round):
-        #airl_trainer.train(total_timesteps=training_time)
+        airl_trainer.train(total_timesteps=training_time)
         if i % 1 == 0:
-            pass
-            # elapsed_time_seconds = time.time() - start_time
-            # elapsed_time_str = time.strftime("%H:%M:%S", time.gmtime(elapsed_time_seconds))
-            # learner_rewards = evaluate_policy(learner, envs, n_eval_episodes=5)
-            # print("learner mean reward at round", i, ":", np.mean(learner_rewards))
-            # print("running time ", i, "round :", elapsed_time_str)
-            # with open(record_file, "a") as f:
-            #     f.write("mean reward at round " + str(i) + ":" + str(np.mean(learner_rewards)) + "\n")
-            #     f.write("running time " + str(i) + " round :" + elapsed_time_str + "\n")
-            #     f.close()
-        if i % 5 == 0:
+            elapsed_time_seconds = time.time() - start_time
+            elapsed_time_str = time.strftime("%H:%M:%S", time.gmtime(elapsed_time_seconds))
+            learner_rewards = evaluate_policy(learner, envs, n_eval_episodes=5)
+            print("learner mean reward at round", i, ":", np.mean(learner_rewards))
+            print("running time ", i, "round :", elapsed_time_str)
+            with open(record_file, "a") as f:
+                f.write("mean reward at round " + str(i) + ":" + str(np.mean(learner_rewards)) + "\n")
+                f.write("running time " + str(i) + " round :" + elapsed_time_str + "\n")
+                f.close()
+        if args.online_training == "True" and i % online_training_freq == 0:
             # generate a trajectory using learned policy
             # and annotate it with progress
 
@@ -339,29 +341,11 @@ if __name__ == "__main__":
             save_demo_to_hdf5(new_demo, data_folder, "gen_demo_" + str(i), env_args=env_meta["env_kwargs"])
             # annotate the new demo
             new_demo_progress = annotate_demo(data_folder, "gen_demo_" + str(i),  single_env, 3, obs_keys, exp_name=args.exp_name)
-            # add new demo and new demo progress to the dataset
-            #trajs.append(new_demo_traj)
-            #print("form check, original demo shape", trajs_for_shaping[0].obs.shape)
-            print("form check, new demo shape", new_demo_traj.obs[0])
-            print("form check, original demo shape", new_demo_traj.obs[0].shape)
-            print("form check, original demo shape", len(new_demo_traj.obs[0]))
-
-            
-            print("index check", traj_index[-1])
             trajs_for_shaping.append(new_demo_traj)
             traj_index.append(len(trajs_for_shaping) - 1)
-            print("index check", traj_index[-1])
 
+            # update PHIRL with new demo and new demo progress
+            airl_trainer.demonstrations_for_shaping = trajs_for_shaping
+            airl_trainer.annotation_list = annotation_list
 
-            break
-            # save the new demo to the dataset
-            # # unfinished code
-
-            # while not done:
-            #     cnt+=1
-            #     action, _ = agent.predict(obs, deterministic=True)
-            #     print("action:",  action)
-            #     obs, _, done, info = single_env.step(action)
-            #     #envs.render()
-            #     print(obs)
-            #     print(done)
+        
